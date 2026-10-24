@@ -4,7 +4,7 @@ export default defineAstroPaperConfig({
   site: {
     // 换成你自己的站点地址；本地预览可先保留示例值
     url: "https://example.com/",
-    title: "示例博客",
+    title: "wxcoding",
     description: "一个基于 AstroPaper 定制的中文博客。",
     author: "Your Name",
     profile: "https://github.com/your-username",
