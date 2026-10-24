@@ -1,0 +1,134 @@
+---
+import LinkButton from "@/components/LinkButton.astro";
+import WechatModal from "@/components/WechatModal.astro";
+import { tplStr, useTranslations } from "@/i18n";
+import config from "@/config";
+
+const { shareLinks } = config;
+const t = useTranslations(Astro.currentLocale);
+
+const icons = import.meta.glob<{
+  default: (_props: Record<string, unknown>) => unknown;
+}>("/src/assets/icons/socials/*.svg");
+
+const pageUrl = Astro.url;
+
+const platformLabel = (name: string) =>
+  name.charAt(0).toUpperCase() + name.slice(1);
+
+const items = await Promise.all(
+  shareLinks.map(async ({ name, url, linkTitle }) => {
+    const mod = await icons[`/src/assets/icons/socials/${name}.svg`]?.();
+    const Icon = mod?.default;
+    const title =
+      linkTitle ??
+      (name === "mail"
+        ? t.post.sharePostViaEmail
+        : tplStr(t.post.sharePostOn, { platform: platformLabel(name) }));
+    return { name, url, title, Icon };
+  })
+);
+
+const wechatUid = `wechat-modal-share-${Math.random().toString(36).slice(2, 8)}`;
+const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(pageUrl.href)}`;
+---
+
+{
+  items.some(({ Icon }) => Icon) && (
+    <div class="flex flex-none flex-col items-center justify-center gap-1 md:items-start">
+      <span class="italic">{t.post.sharePostIntro}</span>
+      <div class="flex flex-wrap items-center justify-center gap-1 md:justify-start">
+        {items.map(({ name, url, title, Icon }) => {
+          if (!Icon) return null;
+          if (name === "wechat") {
+            return (
+              <button
+                type="button"
+                data-wechat-open
+                aria-controls={wechatUid}
+                aria-haspopup="dialog"
+                class="focus-outline inline-flex shrink-0 items-center justify-center p-2 hover:rotate-6 hover:text-accent sm:p-1"
+                title={title}
+              >
+                <Icon class="size-6 scale-125 fill-current opacity-90 sm:scale-110" />
+                <span class="sr-only">{title}</span>
+              </button>
+            );
+          }
+          if (name === "copy") {
+            return (
+              <button
+                type="button"
+                data-copy-link={pageUrl.href}
+                data-copied-text={t.post.copied}
+                class="focus-outline inline-flex shrink-0 items-center justify-center p-2 hover:rotate-6 hover:text-accent sm:p-1"
+                title={title}
+              >
+                <Icon class="size-6 scale-125 fill-current opacity-90 sm:scale-110" />
+                <span class="sr-only">{title}</span>
+              </button>
+            );
+          }
+          return (
+            <LinkButton
+              href={`${url}${pageUrl}`}
+              class="shrink-0 p-2 hover:rotate-6 sm:p-1"
+              title={title}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Icon class="size-6 scale-125 fill-current opacity-90 sm:scale-110" />
+              <span class="sr-only">{title}</span>
+            </LinkButton>
+          );
+        })}
+      </div>
+      {items.some(({ name }) => name === "wechat") && (
+        <WechatModal
+          id={wechatUid}
+          qrSrc={qrSrc}
+          title={t.post.wechatScanTitle}
+          tip={t.post.wechatScanTip}
+        />
+      )}
+    </div>
+  )
+}
+
+<script>
+  function showToast(text: string) {
+    const toast = document.createElement("div");
+    toast.textContent = text;
+    toast.className =
+      "bg-background border-border fixed bottom-8 left-1/2 z-70 -translate-x-1/2 rounded-md border px-4 py-2 text-sm shadow-lg";
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 1600);
+  }
+
+  function bindCopyLinks() {
+    document
+      .querySelectorAll<HTMLButtonElement>("[data-copy-link]")
+      .forEach(btn => {
+        if (btn.dataset.copyBound) return;
+        btn.dataset.copyBound = "1";
+        btn.addEventListener("click", () => {
+          const url = btn.dataset.copyLink ?? "";
+          const done = () => showToast(btn.dataset.copiedText ?? "Link copied");
+          if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(url).then(done).catch(done);
+          } else {
+            const ta = document.createElement("textarea");
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            ta.remove();
+            done();
+          }
+        });
+      });
+  }
+
+  bindCopyLinks();
+  document.addEventListener("astro:after-swap", bindCopyLinks);
+</script>

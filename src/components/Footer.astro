@@ -1,0 +1,129 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import { useTranslations } from "@/i18n";
+
+type Props = {
+  noMarginTop?: boolean;
+} & HTMLAttributes<"footer">;
+
+const { noMarginTop = false, class: className, ...attrs } = Astro.props;
+
+const t = useTranslations(Astro.currentLocale);
+
+// 部署时间语义：构建时把当前时间戳写入页面，浏览器端实时计算相对时间。
+// 每次部署后从「刚刚」重新开始，随真实时间增长，直到下次部署刷新。
+const buildTimeISO = new Date().toISOString();
+const units = JSON.stringify({
+  justNow: t.footer.justNow,
+  min: t.footer.minAgo,
+  hour: t.footer.hourAgo,
+  day: t.footer.dayAgo,
+  month: t.footer.monthAgo,
+  year: t.footer.yearAgo,
+});
+---
+
+<footer
+  class:list={["app-layout", { "mt-auto": !noMarginTop }, className]}
+  {...attrs}
+>
+  <!-- 单行三组布局：① 版权（左） ② 社交图标（中） ③ 统计（右），窄屏降级为竖向居中堆叠 -->
+  <div
+    class="border-border flex flex-col items-center gap-3 border-t py-6 md:flex-row md:flex-wrap md:items-center md:justify-between"
+  >
+    <div class="flex flex-col items-center whitespace-nowrap md:flex-row">
+      <span>{t.footer.copyright} &#169; {new Date().getFullYear()}</span>
+      <span class="hidden md:inline">&nbsp;|&nbsp;</span>
+      <span>{t.footer.allRightsReserved}</span>
+    </div>
+    <div
+      class="text-muted-foreground flex flex-col items-center gap-0.5 md:items-end"
+    >
+      <span class="whitespace-nowrap">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 512 512"
+          fill="currentColor"
+          class="mr-1 inline h-3 w-3 align-[-1px]"
+        >
+          <path
+            d="M256 0a256 256 0 1 1 0 512A256 256 0 1 1 256 0zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z"
+          ></path>
+        </svg>
+        {t.footer.lastUpdated}&nbsp;<span
+          id="footer-last-updated"
+          data-build-time={buildTimeISO}
+          data-units={units}>{t.footer.justNow}</span
+        >
+      </span>
+      <span class="whitespace-nowrap">
+        <span
+          id="busuanzi_container_site_uv"
+          style="display:none"
+          class="cursor-help whitespace-nowrap"
+          title={t.footer.siteVisitors}
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 448 512"
+            fill="currentColor"
+            class="mr-1 inline h-3 w-3 align-[-1px]"
+          >
+            <path
+              d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"
+            ></path>
+          </svg>
+          <span id="busuanzi_value_site_uv"></span>
+        </span>
+        <span
+          id="busuanzi_container_site_pv"
+          style="display:none"
+          class="cursor-help whitespace-nowrap"
+          title={t.footer.siteViews}
+        >
+          &nbsp;·&nbsp;<svg
+            aria-hidden="true"
+            viewBox="0 0 576 512"
+            fill="currentColor"
+            class="inline h-3 w-3 align-[-1px]"
+          >
+            <path
+              d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 8.1-3.3 16.5 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-8.1 3.3-16.6 0-24.7c-14.9-35.7-46.2-87.7-93-131.6C433.5 68.8 368.8 32 288 32zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64c-7.1 0-13.9-1.2-20.3-3.3c-5.5-1.8-11.9 1.6-11.7 7.4c.3 6.9 1.3 13.8 3.2 20.7c13.7 51.2 61.4 87.2 114.9 87.2c65.4 0 118.6-52.3 121.4-117c.1-2.6 .2-5.2 .2-7.9c0-66.3-53.7-120-120-120c-5.7 0-11.3 .4-16.8 1.2c-5.8 .8-8.2 7.4-5.4 12.5c3.1 5.6 4.8 12.1 4.8 19c0 21.7-17.6 39.4-39.3 39.4z"
+            ></path>
+          </svg>
+          <span id="busuanzi_value_site_pv"></span>
+        </span>
+      </span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function updateFooterLastUpdated() {
+    const el = document.getElementById("footer-last-updated");
+    if (!el) return;
+    const build = new Date(el.getAttribute("data-build-time") ?? "").getTime();
+    if (Number.isNaN(build)) return;
+    let units: Record<string, string> = {};
+    try {
+      units = JSON.parse(el.getAttribute("data-units") ?? "{}");
+    } catch {
+      return;
+    }
+    const diff = Date.now() - build;
+    const MIN = 60_000;
+    const HOUR = 60 * MIN;
+    const DAY = 24 * HOUR;
+    const MONTH = 30 * DAY;
+    const YEAR = 365 * DAY;
+    let text = units.justNow ?? "";
+    if (diff >= YEAR) text = `${Math.floor(diff / YEAR)} ${units.year}`;
+    else if (diff >= MONTH) text = `${Math.floor(diff / MONTH)} ${units.month}`;
+    else if (diff >= DAY) text = `${Math.floor(diff / DAY)} ${units.day}`;
+    else if (diff >= HOUR) text = `${Math.floor(diff / HOUR)} ${units.hour}`;
+    else if (diff >= MIN) text = `${Math.floor(diff / MIN)} ${units.min}`;
+    el.textContent = text;
+  }
+  updateFooterLastUpdated();
+  document.addEventListener("astro:page-load", updateFooterLastUpdated);
+</script>

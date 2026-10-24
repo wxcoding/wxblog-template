@@ -1,0 +1,101 @@
+---
+author: Sat Naing
+pubDatetime: 2022-09-25T15:20:35Z
+modDatetime: 2026-05-17T04:57:06.476Z
+title: 自定义 AstroPaper 主题配色方案
+featured: false
+draft: true
+tags:
+  - color-schemes
+  - docs
+description: 了解如何启用或关闭浅色/深色模式，以及自定义 AstroPaper 主题的配色方案。
+---
+import ResponsiveTable from '@/components/ResponsiveTable.astro';
+
+本指南介绍如何启用或关闭浅色和深色模式，以及如何自定义整个网站的配色方案。
+
+## 目录
+
+## 启用或关闭浅色/深色模式
+
+AstroPaper 默认包含浅色和深色模式。可以在 `astro-paper.config.ts` 中关闭此功能：
+
+```ts file="astro-paper.config.ts"
+export default defineAstroPaperConfig({
+  // ...
+  features: {
+    lightAndDarkMode: true, // [!code highlight]
+    // ...
+  },
+});
+```
+
+如需关闭浅色/深色模式切换，请将 `features.lightAndDarkMode` 设为 `false`。关闭后，网站只会使用 `src/styles/theme.css` 中定义的浅色配色。
+
+## 自定义配色方案
+
+AstroPaper 的浅色和深色配色都定义在 `src/styles/theme.css` 中。
+
+```css file="src/styles/theme.css"
+/* 浅色主题 */
+:root,
+[data-theme="light"] {
+  --background: #fdfdfd;
+  --foreground: #282728;
+  --accent: #006cac;
+  --accent-foreground: #ffffff;
+  --muted: #e6e6e6;
+  --muted-foreground: #6b7280;
+  --border: #ece9e9;
+}
+
+/* 深色主题 */
+[data-theme="dark"] {
+  --background: #212737;
+  --foreground: #eaedf3;
+  --accent: #ff6b01;
+  --accent-foreground: #ffffff;
+  --muted: #343f60;
+  --muted-foreground: #afb9ca;
+  --border: #ab4b08;
+}
+```
+
+`:root` 和 `[data-theme="light"]` 选择器定义浅色配色，`[data-theme="dark"]` 则定义深色配色。
+
+要自定义配色，请在 `:root, [data-theme="light"]` 中设置浅色主题颜色，在 `[data-theme="dark"]` 中设置深色主题颜色。
+
+以下是各个颜色属性的详细说明：
+
+<ResponsiveTable variant="minimal" class="max-sm:-mx-4 [&_td]:first-of-type:text-nowrap">
+
+| 颜色属性              | 定义与用途                                  |
+| --------------------- | ------------------------------------------- |
+| `--background`        | 网站的主要颜色，通常用作页面背景。          |
+| `--foreground`        | 次要颜色，通常用于文字。                    |
+| `--accent`            | 强调色，用于链接、悬停状态和交互元素。      |
+| `--accent-foreground` | 显示在 `--accent` 背景上的前景色。          |
+| `--muted`             | 柔和的背景色，用于卡片、标签和悬停状态。    |
+| `--muted-foreground`  | 显示在 `--muted` 背景上的文字颜色。          |
+| `--border`            | 边框颜色，用于分隔线和视觉区分。            |
+
+</ResponsiveTable>
+
+以下是修改浅色配色的示例：
+
+```css file="src/styles/theme.css"
+/* ... */
+:root,
+[data-theme="light"] {
+  --background: #f6eee1;
+  --foreground: #012c56;
+  --accent: #e14a39;
+  --accent-foreground: #ffffff;
+  --muted: #efd8b0;
+  --muted-foreground: #6b7280;
+  --border: #dc9891;
+}
+/* ... */
+```
+
+> 还可以查看 AstroPaper 预先准备的[配色方案](https://astro-paper.pages.dev/posts/predefined-color-schemes/)。

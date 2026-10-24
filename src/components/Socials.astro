@@ -1,0 +1,64 @@
+---
+import config from "@/config";
+import LinkButton from "./LinkButton.astro";
+import WechatModal from "./WechatModal.astro";
+
+const { site, socials } = config;
+
+const icons = import.meta.glob<{
+  default: (_props: Record<string, unknown>) => unknown;
+}>("/src/assets/icons/socials/*.svg");
+
+const items = await Promise.all(
+  socials.map(async ({ name, url, linkTitle }) => {
+    const mod = await icons[`/src/assets/icons/socials/${name}.svg`]?.();
+    const Icon = mod?.default;
+    const title =
+      linkTitle ??
+      (url.startsWith("mailto:") || name === "mail"
+        ? `给 ${site.title} 发送邮件`
+        : `${site.title} 的 ${name.charAt(0).toUpperCase() + name.slice(1)}`);
+    return { name, url, title, Icon };
+  })
+);
+
+const wechatUid = `wechat-modal-social-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<div class="flex flex-wrap items-center gap-1">
+  {
+    items.map(({ name, url, title, Icon }) => {
+      if (!Icon) return null;
+      if (name === "wechat") {
+        return (
+          <>
+            <button
+              type="button"
+              data-wechat-open
+              aria-controls={wechatUid}
+              aria-haspopup="dialog"
+              class="focus-outline p-2 hover:rotate-6 hover:text-accent sm:p-1"
+              title={title}
+            >
+              <Icon class="inline-block size-6 scale-125 fill-current opacity-90 sm:scale-110" />
+              <span class="sr-only">{title}</span>
+            </button>
+            <WechatModal
+              id={wechatUid}
+              qrSrc="/images/wechat-qrcode.jpg"
+              title="微信扫码添加"
+              tip="扫码或长按，加好友"
+              fallbackText="二维码暂未配置，请稍后再来"
+            />
+          </>
+        );
+      }
+      return (
+        <LinkButton href={url} class="p-2 hover:rotate-6 sm:p-1" title={title}>
+          <Icon class="inline-block size-6 scale-125 fill-current opacity-90 sm:scale-110" />
+          <span class="sr-only">{title}</span>
+        </LinkButton>
+      );
+    })
+  }
+</div>

@@ -1,0 +1,95 @@
+---
+import IconX from "@/assets/icons/IconX.svg";
+
+interface Props {
+  /** Must match the trigger button's aria-controls so showModal can find this dialog. */
+  id?: string;
+  qrSrc: string;
+  title: string;
+  tip: string;
+  imgAlt?: string;
+  /** Shown if the QR image fails to load. */
+  fallbackText?: string;
+}
+
+const { id, qrSrc, title, tip, imgAlt = "微信二维码", fallbackText } = Astro.props;
+const uid = id ?? `wechat-modal-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<dialog
+  id={uid}
+  data-wechat-modal
+  class="bg-background text-foreground m-auto rounded-xl p-6 shadow-2xl backdrop:bg-black/60"
+>
+  <div class="flex w-64 flex-col items-center gap-3">
+    <div class="flex w-full items-center justify-between">
+      <p class="font-semibold">{title}</p>
+      <button
+        type="button"
+        data-wechat-close
+        class="focus-outline rounded-md p-1 opacity-70 hover:opacity-100"
+        aria-label="关闭"
+      >
+        <IconX class="size-5" />
+      </button>
+    </div>
+    <img
+      src={qrSrc}
+      alt={imgAlt}
+      class="border-border w-full h-auto rounded-md border"
+      loading="lazy"
+    />
+    {
+      fallbackText && (
+        <p data-wechat-img-fallback class="hidden text-center text-sm opacity-80">
+          {fallbackText}
+        </p>
+      )
+    }
+    <p class="text-sm opacity-80">{tip}</p>
+  </div>
+</dialog>
+
+<script>
+  function bindWechatModals() {
+    document
+      .querySelectorAll<HTMLButtonElement>("[data-wechat-open]")
+      .forEach(btn => {
+        if (btn.dataset.wechatBound) return;
+        btn.dataset.wechatBound = "1";
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("aria-controls");
+          const dlg = (
+            id
+              ? document.getElementById(id)
+              : btn.parentElement?.querySelector("dialog")
+          ) as HTMLDialogElement | null;
+          dlg?.showModal();
+        });
+      });
+
+    document
+      .querySelectorAll<HTMLDialogElement>("dialog[data-wechat-modal]")
+      .forEach(dlg => {
+        if (dlg.dataset.wechatBound) return;
+        dlg.dataset.wechatBound = "1";
+        dlg.addEventListener("click", e => {
+          if (e.target === dlg) dlg.close();
+        });
+        dlg.querySelector("[data-wechat-close]")?.addEventListener("click", () =>
+          dlg.close()
+        );
+        const img = dlg.querySelector("img");
+        const fallback = dlg.querySelector("[data-wechat-img-fallback]");
+        if (img && fallback) {
+          img.addEventListener("error", () => {
+            img.classList.add("hidden");
+            fallback.classList.remove("hidden");
+          });
+        }
+      });
+  }
+
+  bindWechatModals();
+  document.addEventListener("astro:after-swap", bindWechatModals);
+</script>
